@@ -486,6 +486,46 @@ class XtUtils:
         """
         return self.client.get_um_trades(symbol, direction, oid, limit, start_time, end_time)
 
+    def get_spot_hist_orders(self, symbol=None, limit=5, start_time=None, end_time=None):
+        """
+        Get spot historical orders
+
+        Args:
+            symbol (str, optional): Symbol to get orders for. Defaults to None (uses default symbol).
+            limit (int, optional): Maximum number of orders to return. Defaults to 5.
+            start_time (int, optional): Start time in milliseconds. Defaults to None.
+            end_time (int, optional): End time in milliseconds. Defaults to None.
+
+        Returns:
+            dict: Spot historical orders
+        """
+        return self.client.get_spot_hist_orders(
+            symbol=symbol, 
+            limit=limit, 
+            start_time=start_time, 
+            end_time=end_time
+        )
+
+    def get_um_hist_orders(self, symbol=None, limit=5, start_time=None, end_time=None):
+        """
+        Get USDT-M futures historical orders
+
+        Args:
+            symbol (str, optional): Symbol to get orders for. Defaults to None (uses default symbol).
+            limit (int, optional): Maximum number of orders to return. Defaults to 5.
+            start_time (int, optional): Start time in milliseconds. Defaults to None.
+            end_time (int, optional): End time in milliseconds. Defaults to None.
+
+        Returns:
+            dict: Futures historical orders
+        """
+        return self.client.get_um_hist_orders(
+            symbol=symbol, 
+            limit=limit, 
+            start_time=start_time, 
+            end_time=end_time
+        )
+
 
 class XtUtilsApp:
     """
@@ -514,7 +554,9 @@ class XtUtilsApp:
                 {"text": "Get futures fee", "action": "fut_fee"},
                 {"text": "Get account config", "action": "account_config"},
                 {"text": "Get spot trades", "action": "get_spot_trades"},
-                {"text": "Get futures trades", "action": "get_um_trades"}
+                {"text": "Get futures trades", "action": "get_um_trades"},
+                {"text": "Get spot historical orders", "action": "get_spot_hist_orders"},
+                {"text": "Get futures historical orders", "action": "get_um_hist_orders"}
             ],
             "MARKET DATA": [
                 {"text": "Get spot price", "action": "spot_price"},
@@ -554,6 +596,8 @@ class XtUtilsApp:
             "account_config": self.handle_account_config,
             "get_spot_trades": self.handle_get_spot_trades,
             "get_um_trades": self.handle_get_um_trades,
+            "get_spot_hist_orders": self.handle_get_spot_hist_orders,
+            "get_um_hist_orders": self.handle_get_um_hist_orders,
             "spot_price": self.handle_spot_price,
             "spot_config": self.handle_spot_config,
             "perp_market_config": self.handle_perp_market_config,
@@ -1072,6 +1116,36 @@ xt:
 
         self.print_response("Transfer Result",
                           self.acct.transfer(from_account, to_account, currency, amount))
+
+    def handle_get_spot_hist_orders(self):
+        """Handle get spot historical orders request"""
+        symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
+        if not symbol:
+            symbol = None
+            
+        limit = input("Enter limit (leave empty for default 5): ")
+        if limit:
+            limit = int(limit)
+        else:
+            limit = 5
+            
+        self.print_response(f"Spot Historical Orders for {symbol or self.acct.default_symbol}",
+                           self.acct.get_spot_hist_orders(symbol=symbol, limit=limit))
+
+    def handle_get_um_hist_orders(self):
+        """Handle get futures historical orders request"""
+        symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
+        if not symbol:
+            symbol = None
+            
+        limit = input("Enter limit (leave empty for default 5): ")
+        if limit:
+            limit = int(limit)
+        else:
+            limit = 5
+            
+        self.print_response(f"Futures Historical Orders for {symbol or self.acct.default_symbol}",
+                           self.acct.get_um_hist_orders(symbol=symbol, limit=limit))
 
     def main(self):
         """

@@ -677,6 +677,14 @@ class XtApi(RestBaseClass):
 
         # Note: biz_type is currently not used in the implementation but kept for API consistency
         return self.spot.get_trade(symbol)
+    
+    def get_spot_hist_orders(self, symbol=None, biz_type=None, side=None, type=None, order_id=None, from_id=None,
+                           direction=None, limit=None, start_time=None, end_time=None, hidden_canceled=None):
+        return self.spot.get_history_orders(
+            symbol, biz_type, side, type, order_id, from_id, direction, limit, start_time, end_time, hidden_canceled)
+
+    def get_um_hist_orders(self, symbol=None, direction=None, oid=None, limit=5, start_time=None, end_time=None):
+        return self.perp.get_history_order(symbol, direction, oid, limit, start_time, end_time)
 
     def get_um_trades(self,symbol=None, direction=None, oid=None, limit=5, start_time=None, end_time=None):
         """
