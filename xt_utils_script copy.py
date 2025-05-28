@@ -40,7 +40,7 @@ class XtUtils:
         # Initialize the XT API client
         self.client = XtApi(
             spot_host=self.spot_host,
-            perp_host=self.perp_host,
+            um_host=self.perp_host,
             api_key=self.api_key,
             api_secret=self.api_secret,
             default_symbol=self.default_symbol,

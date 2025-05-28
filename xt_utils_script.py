@@ -20,7 +20,7 @@ The script will load API keys from the .keys.yaml file in the same directory.
 """
 
 class XtUtils:
-    def __init__(self, api_key, api_secret, spot_host="https://sapi.xt.com", perp_host="https://fapi.xt.com", default_symbol="btc_usdt", default_quantity=0.001):
+    def __init__(self, api_key, api_secret, spot_host="https://sapi.xt.com", um_host="https://fapi.xt.com",cm_host="https://dapi.xt.com", default_symbol="btc_usdt", default_quantity=0.001):
         """
         Initialize the XT Utils client
 
@@ -35,14 +35,16 @@ class XtUtils:
         self.api_key = api_key
         self.api_secret = api_secret
         self.spot_host = spot_host
-        self.perp_host = perp_host
+        self.um_host = um_host
+        self.cm_host = cm_host
         self.default_symbol = default_symbol
         self.default_quantity = default_quantity
 
         # Initialize the XT API client
         self.client = XtApi(
             spot_host=self.spot_host,
-            perp_host=self.perp_host,
+            um_host=self.um_host,
+            cm_host=self.cm_host,
             api_key=self.api_key,
             api_secret=self.api_secret,
             default_symbol=self.default_symbol,
@@ -163,7 +165,7 @@ class XtUtils:
 
         Args:
             symbol (str, optional): Trading symbol. Defaults to None (uses default symbol).
-            price (float, optional): Order price. Defaults to None (calculated based on current price).
+            price (float, optional): Order price. Required for LIMIT orders, ignored for MARKET orders.
             quantity (float, optional): Order quantity. Defaults to None (uses default quantity).
             order_type (str, optional): Order type ('LIMIT' or 'MARKET'). Defaults to 'LIMIT'.
             time_in_force (str, optional): Time in force. Defaults to 'GTC'.
@@ -201,8 +203,8 @@ class XtUtils:
         Place a spot sell order
 
         Args:
-            symbol (str, optional): Trading symbol. Defaults to None (uses default symbol).
-            price (float, optional): Order price. Defaults to None (calculated based on current price).
+            symbol (str, optional): Symbol to get trades for. Defaults to None (uses default symbol).
+            price (float, optional): Order price. Required for LIMIT orders, ignored for MARKET orders.
             quantity (float, optional): Order quantity. Defaults to None (uses default quantity).
             order_type (str, optional): Order type ('LIMIT' or 'MARKET'). Defaults to 'LIMIT'.
             time_in_force (str, optional): Time in force. Defaults to 'GTC'.
@@ -304,8 +306,7 @@ class XtUtils:
             symbol (str, optional): Trading symbol. Defaults to None (uses default symbol).
             price (float, optional): Order price. Required for LIMIT orders, ignored for MARKET orders.
             quantity (float, optional): Order quantity. Defaults to None (uses default quantity).
-            order_type (str, optional): Order type ('LIMIT' or 'MARKET'). Defaults to 'LIMIT'.
-            time_in_force (str, optional): Time in force. Defaults to '' (uses default based on order type).
+            order_type (str, optional): Order type ('LIMIT' or 'MARKET'). Defaults to '' (uses default based on order type).
 
         Returns:
             dict: Order response
@@ -425,14 +426,14 @@ class XtUtils:
         """
         return self.client.cancel_spot_open_orders(symbol=symbol)
 
-    def cancel_fut_orders(self):
+    def cancel_fut_orders(self,symbol=None):
         """
         Cancel all open futures orders
 
         Returns:
             dict: Cancellation response
         """
-        return self.client.cancel_fut_open_orders()
+        return self.client.cancel_fut_open_orders(symbol=symbol)
 
     def transfer(self, from_account, to_account, currency, amount):
         """
@@ -527,6 +528,69 @@ class XtUtils:
         )
 
 
+    def get_spot_order(self, order_id):
+        """
+        Get spot order by ID
+
+        Args:
+            order_id (int): Order ID to get
+
+        Returns:
+            dict: Spot order
+        """
+        return self.client.get_spot_order(order_id)
+    
+    def get_um_order(self, order_id):
+        """
+        Get USDT-M futures order by ID
+
+        Args:
+            order_id (int): Order ID to get
+
+        Returns:
+            dict: Futures order
+            """
+        return self.client.get_um_order(order_id)
+    
+    def get_cm_order(self, order_id):
+        """
+        Get Coin-M Futures order
+        """
+        return self.client.get_cm_order(order_id)
+
+    def get_spot_order(self, order_id):
+        """
+        Get spot order by ID
+
+        Args:
+            order_id (str): Order ID to get
+
+        Returns:
+            dict: Spot order
+        """
+        return self.client.get_spot_order(order_id=order_id)
+
+    def get_um_order(self, order_id):
+        """
+        Get USDT-M futures order by ID
+
+        Args:
+            order_id (str): Order ID to get
+
+        Returns:
+            dict: Futures order
+        """
+        return self.client.get_um_order(order_id=order_id)
+
+    def get_cm_order(self, order_id):
+        """
+        Get Coin-M Futures order by ID
+        Args:
+            order_id (str): Order ID to get
+        Returns:
+            dict: Futures order
+        """
+        return self.client.get_cm_order(order_id=order_id)
 class XtUtilsApp:
     """
     XT Exchange Utility Application
@@ -556,7 +620,10 @@ class XtUtilsApp:
                 {"text": "Get spot trades", "action": "get_spot_trades"},
                 {"text": "Get futures trades", "action": "get_um_trades"},
                 {"text": "Get spot historical orders", "action": "get_spot_hist_orders"},
-                {"text": "Get futures historical orders", "action": "get_um_hist_orders"}
+                {"text": "Get futures historical orders", "action": "get_um_hist_orders"},
+                {"text": "Get spot order by ID", "action": "get_spot_order"},
+                {"text": "Get UM futures order by ID", "action": "get_um_order"},
+                {"text": "Get CM futures order by ID", "action": "get_cm_order"}
             ],
             "MARKET DATA": [
                 {"text": "Get spot price", "action": "spot_price"},
@@ -598,6 +665,9 @@ class XtUtilsApp:
             "get_um_trades": self.handle_get_um_trades,
             "get_spot_hist_orders": self.handle_get_spot_hist_orders,
             "get_um_hist_orders": self.handle_get_um_hist_orders,
+            "get_spot_order": self.handle_get_spot_order,
+            "get_um_order": self.handle_get_um_order,
+            "get_cm_order": self.handle_get_cm_order,
             "spot_price": self.handle_spot_price,
             "spot_config": self.handle_spot_config,
             "perp_market_config": self.handle_perp_market_config,
@@ -1146,6 +1216,33 @@ xt:
             
         self.print_response(f"Futures Historical Orders for {symbol or self.acct.default_symbol}",
                            self.acct.get_um_hist_orders(symbol=symbol, limit=limit))
+
+    def handle_get_spot_order(self):
+        """Handle get spot order by ID request"""
+        order_id = input("Enter Spot Order ID: ")
+        if not order_id:
+            self.print_response("Error", "Order ID cannot be empty.")
+            return
+        self.print_response(f"Spot Order Details for ID {order_id}",
+                           self.acct.get_spot_order(order_id))
+
+    def handle_get_um_order(self):
+        """Handle get UM futures order by ID request"""
+        order_id = input("Enter UM Futures Order ID: ")
+        if not order_id:
+            self.print_response("Error", "Order ID cannot be empty.")
+            return
+        self.print_response(f"UM Futures Order Details for ID {order_id}",
+                           self.acct.get_um_order(order_id))
+
+    def handle_get_cm_order(self):
+        """Handle get CM futures order by ID request"""
+        order_id = input("Enter CM Futures Order ID: ")
+        if not order_id:
+            self.print_response("Error", "Order ID cannot be empty.")
+            return
+        self.print_response(f"CM Futures Order Details for ID {order_id}",
+                           self.acct.get_cm_order(order_id))
 
     def main(self):
         """

@@ -169,3 +169,21 @@ class RestBaseClass(ABC):
         Returns:
             dict: comms rate info
         '''
+
+    @abstractmethod
+    def get_spot_trades(self):
+        '''
+        Test futures/swap read - get futures positions
+
+        Returns:
+            dict: comms rate info
+        '''
+
+    @abstractmethod
+    def get_um_trades(self):
+        '''
+        Test futures/swap read - get futures positions
+
+        Returns:
+            dict: comms rate info
+        '''

@@ -8,7 +8,7 @@ import os
 import time
 
 class XtApi(RestBaseClass):
-    def __init__(self, spot_host="https://sapi.xt.com",perp_host="https://fapi.xt.com",api_key="", api_secret="",default_symbol="BTC_USDT",default_quantity=0.001,**kwargs):
+    def __init__(self, spot_host="https://sapi.xt.com",um_host="https://fapi.xt.com",cm_host="https://dapi.xt.com",api_key="", api_secret="",default_symbol="BTC_USDT",default_quantity=0.001,**kwargs):
         """
         Initialize the XT API client
 
@@ -20,10 +20,14 @@ class XtApi(RestBaseClass):
         self.api_key = api_key
         self.api_secret = api_secret
         self.spot_host = spot_host
-        self.perp_host = perp_host
+        self.um_host = um_host
+        self.cm_host = cm_host
+
         # Initialize the spot and perp clients
         self.spot = Spot(self.spot_host, access_key=api_key,secret_key= api_secret)
-        self.perp = Perp(self.perp_host, access_key=api_key,secret_key= api_secret)
+        self.um_perp = Perp(self.um_host, access_key=api_key,secret_key= api_secret)
+        self.cm_perp = Perp(self.cm_host, access_key=api_key,secret_key= api_secret)
+
 
         # Set default trading parameters
         self.default_symbol = default_symbol
@@ -77,7 +81,7 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Call the perp API to get positions for the default symbol
-            _, success, error = self.perp.get_position(self.default_symbol)
+            _, success, error = self.um_perp.get_position(self.default_symbol)
             if error:
                 return {"error": error}
             return success
@@ -225,7 +229,7 @@ class XtApi(RestBaseClass):
 
         try:
             # Call the perp API to get market config for the symbol
-            _, success, error = self.perp.get_market_config(symbol)
+            _, success, error = self.um_perp.get_market_config(symbol)
             if error:
                 print(f"Error getting perp market config: {error}")
                 return None
@@ -241,8 +245,7 @@ class XtApi(RestBaseClass):
         Returns:
             dict: Order response
         '''
-        if symbol is None:
-            symbol = self.default_symbol
+
         try:
             # Cancel all open orders
             response = self.spot.cancel_open_orders(symbol)
@@ -251,16 +254,17 @@ class XtApi(RestBaseClass):
             print(f"Error canceling open spot orders: {e}")
             return {"error": str(e)}
 
-    def cancel_fut_open_orders(self):
+    def cancel_fut_open_orders(self,symbol=None):
         '''
         Test futures/swap write/trade - cancel all open orders
 
         Returns:
             dict: Order response
         '''
+
         try:
             # Cancel all open orders
-            _, response, error = self.perp.cancel_all_order(self.default_symbol)
+            _, response, error = self.um_perp.cancel_all_order(symbol)
             if error:
                 return {"error": error}
             return response
@@ -277,7 +281,7 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Call the perp API to get account balance
-            _, response, error = self.perp.get_account_capital()
+            _, response, error = self.um_perp.get_account_capital()
             if error:
                 return {"error": error}
             return response
@@ -296,7 +300,7 @@ class XtApi(RestBaseClass):
             symbol = self.default_symbol
         try:
             # Call the perp API to get mark price
-            _, response, error = self.perp.get_mark_price(symbol)
+            _, response, error = self.um_perp.get_mark_price(symbol)
             if error:
                 return {"error": error}
             return float(response.get('result',{}).get('p',0))
@@ -346,7 +350,7 @@ class XtApi(RestBaseClass):
 
         try:
             # Place a limit buy order for a long position
-            _, response, error = self.perp.send_order(
+            _, response, error = self.um_perp.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="BUY",
@@ -378,7 +382,7 @@ class XtApi(RestBaseClass):
 
         try:
             # Place a limit sell order to close a long position
-            _, response, error = self.perp.send_order(
+            _, response, error = self.um_perp.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="SELL",
@@ -410,7 +414,7 @@ class XtApi(RestBaseClass):
 
         try:
             # Place a limit sell order for a short position
-            _, response, error = self.perp.send_order(
+            _, response, error = self.um_perp.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="SELL",
@@ -442,7 +446,7 @@ class XtApi(RestBaseClass):
 
         try:
             # Place a limit buy order to close a short position
-            _, response, error = self.perp.send_order(
+            _, response, error = self.um_perp.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="BUY",
@@ -467,7 +471,7 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Get current mark price
-            _, mark_price_response, error = self.perp.get_mark_price(self.default_symbol)
+            _, mark_price_response, error = self.um_perp.get_mark_price(self.default_symbol)
             if error or not mark_price_response or "result" not in mark_price_response:
                 return {"error": "Failed to get mark price data"}
 
@@ -481,7 +485,7 @@ class XtApi(RestBaseClass):
                 _qty = round(self.default_quantity / cont_size, qty_prec)
 
             # Place a limit buy order for a long position
-            _, response, error = self.perp.send_order(
+            _, response, error = self.um_perp.send_order(
                 symbol=self.default_symbol,
                 amount=_qty,
                 order_side="BUY",
@@ -506,7 +510,7 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Get current mark price
-            _, mark_price_response, error = self.perp.get_mark_price(self.default_symbol)
+            _, mark_price_response, error = self.um_perp.get_mark_price(self.default_symbol)
 
             if error or not mark_price_response or "result" not in mark_price_response:
                 return {"error": "Failed to get mark price data"}
@@ -521,7 +525,7 @@ class XtApi(RestBaseClass):
                 _qty = round(self.default_quantity / cont_size, qty_prec)
 
             # Place a limit sell order to close a long position
-            _, response, error = self.perp.send_order(
+            _, response, error = self.um_perp.send_order(
                 symbol=self.default_symbol,
                 amount=_qty,
                 order_side="SELL",
@@ -536,6 +540,22 @@ class XtApi(RestBaseClass):
             return response
         except Exception as e:
             print(f"Error closing long futures position: {e}")
+            return {"error": str(e)}
+
+    def get_spot_order(self,order_id=None,client_order_id=None):
+        '''
+        query a single order
+        either order_id or client_order_id must be provided
+
+        Returns:
+            dict: Order response
+        '''
+        try:
+            # Call the spot API to get the order
+            response = self.spot.get_order(order_id,client_order_id)
+            return response
+        except Exception as e:
+            print(f"Error getting spot order: {e}")
             return {"error": str(e)}
 
     def get_spot_open_orders(self):
@@ -562,7 +582,7 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Call the perp API to get open orders for the default symbol
-            _, response, error = self.perp.get_account_order('NEW')
+            _, response, error = self.um_perp.get_account_order('NEW')
             if error:
                 return {"error": error}
             return response
@@ -579,11 +599,11 @@ class XtApi(RestBaseClass):
         '''
         bodymod = "application/json"
         path = "/future/user/v1/account/info"
-        url = self.perp.host + path
+        url = self.um_perp.host + path
         params = {}
-        header = self.perp._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
+        header = self.um_perp._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
                                    params=params)
-        code, success, error = self.perp._fetch(method="GET", url=url, headers=header, data=params, timeout=self.perp.timeout)
+        code, success, error = self.um_perp._fetch(method="GET", url=url, headers=header, data=params, timeout=self.um_perp.timeout)
         return code, success, error
 
     def get_fut_user_step_rate(self):
@@ -595,11 +615,11 @@ class XtApi(RestBaseClass):
         """
         bodymod = "application/json"
         path = "/future/user" + '/v1/user/step-rate'
-        url = self.perp.host + path
+        url = self.um_perp.host + path
         params = {}
-        header = self.perp._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
+        header = self.um_perp._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
                                    params=params)
-        code, success, error = self.perp._fetch(method="GET", url=url, headers=header, data=params, timeout=self.perp.timeout)
+        code, success, error = self.um_perp._fetch(method="GET", url=url, headers=header, data=params, timeout=self.um_perp.timeout)
         return code, success, error
 
     def get_um_comms_rate(self, symbol=None):
@@ -684,7 +704,7 @@ class XtApi(RestBaseClass):
             symbol, biz_type, side, type, order_id, from_id, direction, limit, start_time, end_time, hidden_canceled)
 
     def get_um_hist_orders(self, symbol=None, direction=None, oid=None, limit=5, start_time=None, end_time=None):
-        return self.perp.get_history_order(symbol, direction, oid, limit, start_time, end_time)
+        return self.um_perp.get_history_order(symbol, direction, oid, limit, start_time, end_time)
 
     def get_um_trades(self,symbol=None, direction=None, oid=None, limit=5, start_time=None, end_time=None):
         """
@@ -693,7 +713,7 @@ class XtApi(RestBaseClass):
         """
         bodymod = "application/x-www-form-urlencoded"
         path = "/future/trade" + '/v1/order/trade-list'
-        url = self.perp.host + path
+        url = self.um_perp.host + path
         params = {}
         if symbol:
             params["symbol"] = symbol
@@ -708,10 +728,16 @@ class XtApi(RestBaseClass):
         if end_time:
             params["endTime"] = end_time
 
-        header = self.perp._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
+        header = self.um_perp._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
                                    params=params)
-        code, success, error = self.perp._fetch(method="GET", url=url, headers=header, params=params, timeout=self.perp.timeout)
+        code, success, error = self.um_perp._fetch(method="GET", url=url, headers=header, params=params, timeout=self.um_perp.timeout)
         return code, success, error
+
+    def get_um_order(self,order_id=None):
+        return self.um_perp.get_order_id(order_id)
+
+    def get_cm_order(self,order_id=None):
+        return self.cm_perp.get_order_id(order_id)
 
 
 if __name__ == "__main__":
@@ -728,7 +754,7 @@ if __name__ == "__main__":
         print("=" * (len(title) + 8))
 
     # Initialize the XT API client
-    xt_api = XtApi(spot_host="https://sapi.xt.com",perp_host="https://fapi.xt.com")
+    xt_api = XtApi(spot_host="https://sapi.xt.com",um_host="https://fapi.xt.com")
 
 
     data = xt_api.get_um_price("eth_usdt")
