@@ -799,7 +799,10 @@ xt:
         print(f"Selected account: {self.selected_account}")
         print(f"Public key: {self.acct.client.api_key}") 
         print(f"Spot host: {self.acct.client.spot_host}")
-        print(f"Perp host: {self.acct.client.perp_host}")
+        print(f"Um host: {self.acct.client.um_host}")
+        print(f"Cm host: {self.acct.client.cm_host}")
+        print("=" * 40)
+
         return True
 
     def display_menu(self):
