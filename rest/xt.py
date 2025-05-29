@@ -749,9 +749,9 @@ class XtApi(RestBaseClass):
             params["accountName"] = account_name
         if level:
             params["level"] = level
-
-        res = self.user_api.req_get("/v4/user/account",params)
         breakpoint()
+        res = self.user_api.req_get("/v4/user/account",params,auth=True)
+        
         return res
 
 
