@@ -8,7 +8,7 @@ import os
 import time
 
 class XtApi(RestBaseClass):
-    def __init__(self, spot_host="https://sapi.xt.com",um_host="https://fapi.xt.com",cm_host="https://dapi.xt.com",api_key="", api_secret="",default_symbol="BTC_USDT",default_quantity=0.001,**kwargs):
+    def __init__(self, spot_host="https://sapi.xt.com",um_host="https://fapi.xt.com",cm_host="https://dapi.xt.com",user_api_host="https://api.xt.com",api_key="", api_secret="",default_symbol="BTC_USDT",default_quantity=0.001,**kwargs):
         """
         Initialize the XT API client
 
@@ -22,12 +22,13 @@ class XtApi(RestBaseClass):
         self.spot_host = spot_host
         self.um_host = um_host
         self.cm_host = cm_host
+        self.user_api_host = user_api_host
 
         # Initialize the spot and perp clients
-        self.spot = Spot(self.spot_host, access_key=api_key,secret_key= api_secret)
-        self.um_perp = Perp(self.um_host, access_key=api_key,secret_key= api_secret)
-        self.cm_perp = Perp(self.cm_host, access_key=api_key,secret_key= api_secret)
-
+        self.spot = Spot(self.spot_host,user_id=None, access_key=api_key,secret_key= api_secret)
+        self.um_perp = Perp(self.um_host,user_id=None, access_key=api_key,secret_key= api_secret)
+        self.cm_perp = Perp(self.cm_host,user_id=None, access_key=api_key,secret_key= api_secret)
+        self.user_api = Spot(self.user_api_host,user_id=None, access_key=api_key,secret_key= api_secret)
 
         # Set default trading parameters
         self.default_symbol = default_symbol
@@ -63,7 +64,6 @@ class XtApi(RestBaseClass):
         Returns:
             dict: Account balances
         '''
-
         try:
             # Call the spot API to get balances
             response = self.spot.balances()
@@ -565,6 +565,8 @@ class XtApi(RestBaseClass):
         Returns:
             dict: Open orders
         '''
+
+        breakpoint()
         try:
             # Call the spot API to get open orders for the default symbol
             response = self.spot.get_open_orders( biz_type="SPOT")
@@ -738,6 +740,19 @@ class XtApi(RestBaseClass):
 
     def get_cm_order(self,order_id=None):
         return self.cm_perp.get_order_id(order_id)
+    
+    def get_acct_list(self,account_id=None,account_name=None,level=None):
+        params = {}
+        if account_id:
+            params["accountId"] = account_id
+        if account_name:
+            params["accountName"] = account_name
+        if level:
+            params["level"] = level
+
+        res = self.user_api.req_get("/v4/user/account",params)
+        breakpoint()
+        return res
 
 
 if __name__ == "__main__":

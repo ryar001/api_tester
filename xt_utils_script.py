@@ -20,7 +20,7 @@ The script will load API keys from the .keys.yaml file in the same directory.
 """
 
 class XtUtils:
-    def __init__(self, api_key, api_secret, spot_host="https://sapi.xt.com", um_host="https://fapi.xt.com",cm_host="https://dapi.xt.com", default_symbol="btc_usdt", default_quantity=0.001):
+    def __init__(self, api_key, api_secret, spot_host="https://sapi.xt.com", um_host="https://fapi.xt.com",cm_host="https://dapi.xt.com",user_api_host="https://api.xt.com",default_symbol="btc_usdt", default_quantity=0.001):
         """
         Initialize the XT Utils client
 
@@ -37,6 +37,7 @@ class XtUtils:
         self.spot_host = spot_host
         self.um_host = um_host
         self.cm_host = cm_host
+        self.user_api_host = user_api_host
         self.default_symbol = default_symbol
         self.default_quantity = default_quantity
 
@@ -45,6 +46,7 @@ class XtUtils:
             spot_host=self.spot_host,
             um_host=self.um_host,
             cm_host=self.cm_host,
+            user_api_host=self.user_api_host,
             api_key=self.api_key,
             api_secret=self.api_secret,
             default_symbol=self.default_symbol,
@@ -591,6 +593,22 @@ class XtUtils:
             dict: Futures order
         """
         return self.client.get_cm_order(order_id=order_id)
+
+    def get_acct_list(self, account_id=None, account_name=None, level=None):
+        """
+        Get account list from user center.
+
+        Args:
+            account_id (str, optional): Account ID. Defaults to None.
+            account_name (str, optional): Account Name. Defaults to None.
+            level (int, optional): Level type. Defaults to None.
+
+        Returns:
+            dict: Account list response
+        """
+        return self.client.get_acct_list(account_id=account_id, account_name=account_name, level=level)
+
+
 class XtUtilsApp:
     """
     XT Exchange Utility Application
@@ -623,7 +641,8 @@ class XtUtilsApp:
                 {"text": "Get futures historical orders", "action": "get_um_hist_orders"},
                 {"text": "Get spot order by ID", "action": "get_spot_order"},
                 {"text": "Get UM futures order by ID", "action": "get_um_order"},
-                {"text": "Get CM futures order by ID", "action": "get_cm_order"}
+                {"text": "Get CM futures order by ID", "action": "get_cm_order"},
+                {"text": "Get account list (User Center)", "action": "get_acct_list"}
             ],
             "MARKET DATA": [
                 {"text": "Get spot price", "action": "spot_price"},
@@ -668,6 +687,7 @@ class XtUtilsApp:
             "get_spot_order": self.handle_get_spot_order,
             "get_um_order": self.handle_get_um_order,
             "get_cm_order": self.handle_get_cm_order,
+            "get_acct_list": self.handle_get_acct_list,
             "spot_price": self.handle_spot_price,
             "spot_config": self.handle_spot_config,
             "perp_market_config": self.handle_perp_market_config,
@@ -741,9 +761,13 @@ xt:
                 api_key = key_data['api_key']
                 api_secret = key_data['api_secret']
                 spot_host = key_data.get('spot_host', 'https://sapi.xt.com')
-                perp_host = key_data.get('perp_host', 'https://fapi.xt.com')
+                um_host = key_data.get('perp_host', 'https://fapi.xt.com')
+                cm_host = key_data.get('cm_host', 'https://cmapi.xt.com')
+                user_api_host = key_data.get('user_api_host', 'https://api.xt.com')
+
+
                 # Initialize the XT Utils
-                xt_utils = XtUtils(api_key, api_secret, spot_host, perp_host)
+                xt_utils = XtUtils(api_key, api_secret, spot_host=spot_host, um_host=um_host, cm_host=cm_host, user_api_host=user_api_host)
 
                 # Add to accounts dictionary
                 self.acct_dict[name] = xt_utils
@@ -1246,6 +1270,28 @@ xt:
             return
         self.print_response(f"CM Futures Order Details for ID {order_id}",
                            self.acct.get_cm_order(order_id))
+
+    def handle_get_acct_list(self):
+        """Handle get account list request"""
+        account_id = input("Enter Account ID (leave empty for none): ")
+        if not account_id:
+            account_id = None
+
+        account_name = input("Enter Account Name (leave empty for none): ")
+        if not account_name:
+            account_name = None
+
+        level_input = input("Enter Level (leave empty for default 1): ")
+        if level_input:
+            try:
+                level = int(level_input)
+            except ValueError:
+                self.print_response("Error", "Level must be an integer.")
+                return
+        else:
+            level = 1
+
+        self.print_response("Account List", self.acct.get_acct_list(account_id, account_name, level))
 
     def main(self):
         """
