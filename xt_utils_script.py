@@ -1197,7 +1197,7 @@ xt:
         symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
         if not symbol:
             symbol = self.acct.default_symbol
-        self.print_response("Cancel Futures Orders", self.acct.cancel_fut_orders())
+        self.print_response("Cancel Futures Orders", self.acct.cancel_fut_orders(symbol=symbol))
 
     def handle_transfer(self):
         """Handle transfer between accounts request"""
