@@ -29,6 +29,7 @@ class XtApi(RestBaseClass):
         self.um_perp = Perp(self.um_host,user_id=None, access_key=api_key,secret_key= api_secret)
         self.cm_perp = Perp(self.cm_host,user_id=None, access_key=api_key,secret_key= api_secret)
         self.user_api = Spot(self.user_api_host,user_id=None, access_key=api_key,secret_key= api_secret)
+        self._p_user_api = Perp(self.user_api_host,user_id=None, access_key=api_key,secret_key= api_secret)
 
         # Set default trading parameters
         self.default_symbol = default_symbol

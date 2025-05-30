@@ -1189,11 +1189,14 @@ xt:
         """Handle cancel spot orders request"""
         symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
         if not symbol:
-            symbol = None
+            symbol = self.acct.default_symbol
         self.print_response("Cancel Spot Orders", self.acct.cancel_spot_orders(symbol=symbol))
 
     def handle_cancel_fut_orders(self):
         """Handle cancel futures orders request"""
+        symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
+        if not symbol:
+            symbol = self.acct.default_symbol
         self.print_response("Cancel Futures Orders", self.acct.cancel_fut_orders())
 
     def handle_transfer(self):
