@@ -566,8 +566,6 @@ class XtApi(RestBaseClass):
         Returns:
             dict: Open orders
         '''
-
-        breakpoint()
         try:
             # Call the spot API to get open orders for the default symbol
             response = self.spot.get_open_orders( biz_type="SPOT")
