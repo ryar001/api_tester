@@ -29,7 +29,7 @@ class XtApi(RestBaseClass):
         self.um_perp = Perp(self.um_host,user_id=None, access_key=api_key,secret_key= api_secret)
         self.cm_perp = Perp(self.cm_host,user_id=None, access_key=api_key,secret_key= api_secret)
         self.user_api = Spot(self.user_api_host,user_id=None, access_key=api_key,secret_key= api_secret)
-        self._p_user_api = Perp(self.user_api_host,user_id=None, access_key=api_key,secret_key= api_secret)
+        self._p_user_api = Perp(self.user_api_host,user_id=None, access_key=self.api_key,secret_key=self.api_secret)
 
         # Set default trading parameters
         self.default_symbol = default_symbol
@@ -750,9 +750,12 @@ class XtApi(RestBaseClass):
             params["accountName"] = account_name
         if level:
             params["level"] = level
-        breakpoint()
-        res = self.user_api.req_get("/v4/user/account",params,auth=True)
+        try:
+            res = self.user_api.req_get("/v4/user/account",params,auth=True)
         
+        except Exception as e:
+            print(f"Error getting account list: {e}")
+
         return res
 
 
