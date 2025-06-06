@@ -770,10 +770,12 @@ if __name__ == "__main__":
         print(json.dumps(response, indent=2))
         print("=" * (len(title) + 8))
 
+    # read_write api
+    acct_info_1 = keys['xt']['read_write_2']
     # Initialize the XT API client
-    xt_api = XtApi(spot_host="https://sapi.xt.com",um_host="https://fapi.xt.com")
+    xt_api = XtApi(spot_host=acct_info_1['spot_host'],um_host=acct_info_1['um_host'],cm_host=acct_info_1['cm_host'],api_key=acct_info_1['api_key'],api_secret=acct_info_1['api_secret'])
 
-
+    breakpoint()
     data = xt_api.get_um_price("eth_usdt")
     print(data)
     breakpoint()
