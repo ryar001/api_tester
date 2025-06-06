@@ -126,6 +126,8 @@ class XtApi(RestBaseClass):
         quote_qty = None
         if order_type == 'MARKET':
             price = None
+            assert time_in_force in ['IOC','FOK'], "Time in force must be IOC or FOK for market orders"
+            
 
         self.order(symbol=symbol,side='SELL',order_type=order_type,time_in_force=time_in_force,price=price,quantity=quantity,quote_qty=quote_qty)
 

@@ -175,28 +175,6 @@ class XtUtils:
         Returns:
             dict: Order response
         """
-        if symbol is None:
-            symbol = self.default_symbol
-
-        if quantity is None:
-            quantity = self.default_quantity
-
-        if price is None and order_type == 'LIMIT':
-            # Get current price
-            current_price = self.client.get_spot_price(symbol)
-            if not current_price:
-                return {"error": "Failed to get current price"}
-
-            # Get market config for precision
-            config = self.client.get_spot_config(symbol)
-            if config is None:
-                return {"error": "Failed to get market config"}
-            config = config[0]
-            price_precision = int(config["pricePrecision"])
-
-            # Calculate a price below current price to avoid execution
-            price = round(current_price * self.client.default_price_multiplier, price_precision)
-
         return self.client.buy_spot(symbol=symbol, price=price, quantity=quantity,
                                    order_type=order_type, time_in_force=time_in_force)
 
@@ -214,27 +192,6 @@ class XtUtils:
         Returns:
             dict: Order response
         """
-        if symbol is None:
-            symbol = self.default_symbol
-
-        if quantity is None:
-            quantity = self.default_quantity
-
-        if price is None and order_type == 'LIMIT':
-            # Get current price
-            current_price = self.client.get_spot_price(symbol)
-            if not current_price:
-                return {"error": "Failed to get current price"}
-
-            # Get market config for precision
-            config = self.client.get_spot_config(symbol)
-            if config is None:
-                return {"error": "Failed to get market config"}
-            config = config[0]
-            price_precision = int(config["pricePrecision"])
-
-            # Calculate a price above current price to avoid execution
-            price = round(current_price * (1 + (1 - self.client.default_price_multiplier)), price_precision)
 
         return self.client.sell_spot(symbol=symbol, price=price, quantity=quantity,
                                     order_type=order_type, time_in_force=time_in_force)
@@ -1037,7 +994,7 @@ xt:
                 return
             price = current_price
 
-        time_in_force = input("Enter time in force (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
+        time_in_force = input("Enter time in force,For Market order only FOK/IOC is valid (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
 
         self.print_response("Buy Spot Result",
                           self.acct.buy_spot(symbol=symbol, price=price, quantity=quantity,
@@ -1063,7 +1020,7 @@ xt:
             if price_input:
                 price = float(price_input)
 
-        time_in_force = input("Enter time in force (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
+        time_in_force = input("Enter time in force,For Market order only FOK/IOC is valid (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
 
         self.print_response("Sell Spot Result",
                           self.acct.sell_spot(symbol=symbol, price=price, quantity=quantity,
