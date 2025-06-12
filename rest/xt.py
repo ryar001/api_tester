@@ -109,8 +109,23 @@ class XtApi(RestBaseClass):
             print(f"Error getting spot price: {e}")
             return
 
+    def convert_float_to_int(self,number:float|str)->int|float:
+        if isinstance(number, str):
+            number = float(number)
+        if number == int(number):
+            return int(number)
+        else:
+            return number
+
     def order(self,symbol,side, order_type, biz_type='SPOT', time_in_force='GTC', client_order_id=None, price=None,
               quantity=None, quote_qty=None):
+        # convert to int if float is integer value
+        if price:
+            price = self.convert_float_to_int(price)
+        if quantity:
+            quantity = self.convert_float_to_int(quantity)
+        if quote_qty:
+            quote_qty = self.convert_float_to_int(quote_qty)
         return self.spot.order(symbol, side, order_type, biz_type, time_in_force, client_order_id, price, quantity, quote_qty)
 
     def buy_spot(self,symbol,price,quantity,order_type='LIMIT',time_in_force='GTC'):
