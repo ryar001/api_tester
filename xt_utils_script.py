@@ -192,7 +192,6 @@ class XtUtils:
         Returns:
             dict: Order response
         """
-
         return self.client.sell_spot(symbol=symbol, price=price, quantity=quantity,
                                     order_type=order_type, time_in_force=time_in_force)
 
@@ -579,7 +578,7 @@ class XtUtilsApp:
         """Initialize the XT Utils Application"""
         self.acct_dict = {}
         self.selected_account = None
-        self.acct = None
+        self.acct:XtUtils = None
 
         # Define menu categories and their options with corresponding actions
         self.menu_categories = {
@@ -971,7 +970,7 @@ xt:
         """Handle buy spot request"""
         symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
         if not symbol:
-            symbol = None
+            symbol = self.acct.default_symbol
 
         order_type = input("Enter order type (LIMIT or MARKET, leave empty for LIMIT): ").upper() or "LIMIT"
 
@@ -979,20 +978,19 @@ xt:
         if quantity:
             quantity = float(quantity)
         else:
-            quantity = None
+            quantity = self.acct.default_quantity
 
         price = None
         if order_type == "LIMIT":
             price_input = input("Enter price (leave empty for auto-calculated price): ")
             if price_input:
                 price = float(price_input)
-        else:
-            # get current price
-            current_price = self.acct.get_spot_price(symbol)
-            if not current_price:
-                self.print_response("Error", "Failed to get current price")
-                return
-            price = current_price
+            else:
+                # get current price
+                price = self.acct.get_spot_price(symbol)
+                if not price:
+                    self.print_response("Error", "Failed to get current price")
+                    return
 
         time_in_force = input("Enter time in force,For Market order only FOK/IOC is valid (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
 
@@ -1004,7 +1002,7 @@ xt:
         """Handle sell spot request"""
         symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
         if not symbol:
-            symbol = None
+            symbol = self.acct.default_symbol
 
         order_type = input("Enter order type (LIMIT or MARKET, leave empty for LIMIT): ").upper() or "LIMIT"
 
@@ -1012,13 +1010,18 @@ xt:
         if quantity:
             quantity = float(quantity)
         else:
-            quantity = None
+            quantity = self.acct.default_quantity
 
         price = None
         if order_type == "LIMIT":
-            price_input = input("Enter price (leave empty for auto-calculated price): ")
+            price_input = input("Enter price (leave empty for current price): ")
             if price_input:
                 price = float(price_input)
+            else:
+                current_price = self.acct.get_spot_price(symbol)
+                if not current_price:
+                    self.print_response("Error", "Failed to get current price")
+                    return
 
         time_in_force = input("Enter time in force,For Market order only FOK/IOC is valid (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
 

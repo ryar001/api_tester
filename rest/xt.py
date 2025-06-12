@@ -111,25 +111,32 @@ class XtApi(RestBaseClass):
 
     def order(self,symbol,side, order_type, biz_type='SPOT', time_in_force='GTC', client_order_id=None, price=None,
               quantity=None, quote_qty=None):
-        self.spot.order(symbol, side, order_type, biz_type, time_in_force, client_order_id, price, quantity, quote_qty)
+        return self.spot.order(symbol, side, order_type, biz_type, time_in_force, client_order_id, price, quantity, quote_qty)
 
     def buy_spot(self,symbol,price,quantity,order_type='LIMIT',time_in_force='GTC'):
         quote_qty = None
         if order_type == 'MARKET':
-            quote_qty = quantity * price
+            quote_qty = str(round(quantity * price,2))
             quantity = None
             price = None
+        if quantity:
+            quantity = str(quantity)
+        if price:
+            price = str(price)
 
-        self.order(symbol=symbol,side='BUY',order_type=order_type,time_in_force=time_in_force,price=price,quantity=quantity,quote_qty=quote_qty)
+        return self.order(symbol=symbol,side='BUY',order_type=order_type,time_in_force=time_in_force,price=price,quantity=quantity,quote_qty=quote_qty)
 
     def sell_spot(self,symbol,price,quantity,order_type='LIMIT',time_in_force='GTC'):
         quote_qty = None
         if order_type == 'MARKET':
             price = None
             assert time_in_force in ['IOC','FOK'], "Time in force must be IOC or FOK for market orders"
-            
+        if quantity:
+            quantity = str(quantity)
+        if price:
+            price = str(price)
 
-        self.order(symbol=symbol,side='SELL',order_type=order_type,time_in_force=time_in_force,price=price,quantity=quantity,quote_qty=quote_qty)
+        return self.order(symbol=symbol,side='SELL',order_type=order_type,time_in_force=time_in_force,price=price,quantity=quantity,quote_qty=quote_qty)
 
     def test_buy_spot(self):
         '''
