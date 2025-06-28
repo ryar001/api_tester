@@ -837,3 +837,5 @@ if __name__ == "__main__":
             print(f"Error extracting precision values: {str(e)}")
     else:
         print("Failed to get market config for futures trading")
+
+

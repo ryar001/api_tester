@@ -202,7 +202,7 @@ class OkxApi(RestBaseClass):
         result = self.trade_api.get_fills(instType="SWAP", uly=uly, instId=instId, ordId=ordId, after=after, before=before, limit=limit, instFamily=instFamily,begin=begin,end=end)
         return result
     
-    def _get_order_params(self, symbol, price, quantity, order_type,td_mode="cross"):
+    def _get_order_params(self, symbol, price, quantity, order_type,td_mode="cross",is_fut=False):
         if order_type not in self.PRICE_REQ:
             price = None
         else:
@@ -210,7 +210,7 @@ class OkxApi(RestBaseClass):
                 return {"error": "Price is required for LIMIT order"}
 
         # for market orders, sz is in quote ccy
-        if order_type == "market":
+        if order_type == "market" and not is_fut:
             _price = self.get_spot_price(symbol)
             quantity = quantity * _price
 
@@ -272,9 +272,10 @@ class OkxApi(RestBaseClass):
         Returns:
             dict: Order response
         '''
-        params = self._get_order_params(symbol, price, quantity, order_type,td_mode)
+        params = self._get_order_params(symbol, price, quantity, order_type,td_mode,is_fut=True)
         print(f"open long fut params: {params}")
         # Place a futures buy order to open a long position
+
         result = self.trade_api.place_order(
             **params,
             side='buy',            # Order side (buy to open long)
