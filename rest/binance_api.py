@@ -22,6 +22,9 @@ class binanceApi(RestBaseClass):
         self.default_quantity = default_quantity
         print("Binance API client initialized")
 
+    def get_um_trades(self,**kwargs):
+        ''''''
+
     def spot_user_universal_transfer_(self, type: str, asset: str, amount: str, **kwargs):
         """User Universal Transfer (USER_DATA)
 
@@ -62,6 +65,9 @@ class binanceApi(RestBaseClass):
         except Exception as e:
             print(f"Error getting spot config: {e}")
             return None
+        
+    def get_spot_trades(self,**kwargs):
+        ''''''
         
     def get_um_price(self, symbol=None):
         '''
