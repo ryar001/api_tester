@@ -431,6 +431,7 @@ class BinancePMClient:
 
     def create_listenKey(self):
         headers = {'X-MBX-APIKEY': self.api_key}
+        print(headers)
         listenKey = requests.post("https://papi.binance.com/papi/v1/listenKey",headers=headers)
         return listenKey.json()
 
