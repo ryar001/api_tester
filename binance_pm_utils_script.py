@@ -37,6 +37,10 @@ class BinancePmUtils:
             default_quantity=self.default_quantity
         )
 
+    def get_listen_key(self) -> dict:
+        """Get a listen key for user data streams."""
+        return self.client.client.create_listenKey()
+
     def get_spot_balance(self) -> Dict[str, Any]:
         """Get spot account balance."""
         return self.client.get_spot_balance()
@@ -376,6 +380,7 @@ class BinancePmUtilsApp:
             "22": ("transfer_asset_to_spot", "Transfer asset to spot"),
             "23": ("get_spot_price", "Get spot price"),
             "24": ("get_spot_balance", "Get spot acct balance"),
+            "25": ("get_listen_key", "Get listen key"),
             "0": ("exit_app", "Exit")
         }
 
@@ -499,6 +504,11 @@ class BinancePmUtilsApp:
         symbol = input("Enter symbol (or press Enter for default): ")
         symbol = symbol if symbol else None
         result = self.current_account.get_spot_open_orders(symbol=symbol)
+        self.print_result(result)
+
+    def get_listen_key(self) -> None:
+        """Get and display a listen key."""
+        result = self.current_account.get_listen_key()
         self.print_result(result)
 
     def get_um_open_orders(self) -> None:
