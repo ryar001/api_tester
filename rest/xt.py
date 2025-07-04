@@ -86,7 +86,10 @@ class XtApi(RestBaseClass):
             _, cm_success, error = self.cm_perp.get_position(self.default_symbol)
             if error:
                 return {"error": error}
-            return success, cm_success
+            return {
+                "um": success,
+                "cm": cm_success
+            }
         except Exception as e:
             print(f"Error getting futures position: {e}")
             return {"error": str(e)}
@@ -256,10 +259,14 @@ class XtApi(RestBaseClass):
         try:
             # Call the perp API to get market config for the symbol
             _, success, error = self.um_perp.get_market_config(symbol)
+            _, cm_success, error = self.cm_perp.get_market_config(symbol)
             if error:
                 print(f"Error getting perp market config: {error}")
                 return None
-            return success
+            return {
+                "um": success,
+                "cm": cm_success
+            }
         except Exception as e:
             print(f"Error getting perp market config: {e}")
             return None
@@ -280,20 +287,31 @@ class XtApi(RestBaseClass):
             print(f"Error canceling open spot orders: {e}")
             return {"error": str(e)}
 
-    def cancel_fut_open_orders(self,symbol=None):
+    def cancel_fut_open_orders(self,symbol:str=None):
         '''
         Test futures/swap write/trade - cancel all open orders
 
         Returns:
             dict: Order response
         '''
-
+        res = {}
         try:
-            # Cancel all open orders
-            _, response, error = self.um_perp.cancel_all_order(symbol)
-            if error:
-                return {"error": error}
-            return response
+            if symbol:
+                # Cancel all open orders
+                if symbol.endswith("usdt"):
+                    _, response, error = self.um_perp.cancel_all_order(symbol)
+                    res["um"] = response
+                elif symbol.endswith("usd"):
+                    _, cm_response, error = self.cm_perp.cancel_all_order(symbol)
+                    res["cm"] = cm_response
+            else:
+                _, um_response, error = self.um_perp.cancel_all_order(symbol)
+                _, cm_response, error = self.cm_perp.cancel_all_order(symbol)
+                res["um"] = um_response
+                res["cm"] = cm_response
+
+
+            return res
         except Exception as e:
             print(f"Error canceling open futures orders: {e}")
             return {"error": str(e)}
@@ -311,7 +329,10 @@ class XtApi(RestBaseClass):
             _, cm_reponse, error = self.cm_perp.get_account_capital()
             if error:
                 return {"error": error}
-            return response, cm_reponse
+            return {
+                "um": response,
+                "cm": cm_reponse
+            }
         except Exception as e:
             print(f"Error getting futures account balance: {e}")
             return {"error": str(e)}
@@ -374,10 +395,15 @@ class XtApi(RestBaseClass):
             dict: Order response
         '''
         symbol, price, qty, time_in_force = self._get_fut_params(symbol, price, qty, order_type, time_in_force)
-
+        if symbol.endswith("usdt"):
+            api = self.um_perp
+        elif symbol.endswith("usd"):
+            api = self.cm_perp
+        else:
+            api = self.um_perp
         try:
             # Place a limit buy order for a long position
-            _, response, error = self.um_perp.send_order(
+            _, response, error = api.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="BUY",
@@ -406,10 +432,15 @@ class XtApi(RestBaseClass):
             dict: Order response
         '''
         symbol, price, qty, time_in_force = self._get_fut_params(symbol, price, qty, order_type, time_in_force)
-
+        if symbol.endswith("usdt"):
+            api = self.um_perp
+        elif symbol.endswith("usd"):
+            api = self.cm_perp
+        else:
+            api = self.um_perp
         try:
             # Place a limit sell order to close a long position
-            _, response, error = self.um_perp.send_order(
+            _, response, error = api.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="SELL",
@@ -438,10 +469,15 @@ class XtApi(RestBaseClass):
             dict: Order response
         '''
         symbol, price, qty, time_in_force = self._get_fut_params(symbol, price, qty, order_type, time_in_force)
-
+        if symbol.endswith("usdt"):
+            api = self.um_perp
+        elif symbol.endswith("usd"):
+            api = self.cm_perp
+        else:
+            api = self.um_perp
         try:
             # Place a limit sell order for a short position
-            _, response, error = self.um_perp.send_order(
+            _, response, error = api.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="SELL",
@@ -470,10 +506,15 @@ class XtApi(RestBaseClass):
             dict: Order response
         '''
         symbol, price, qty, time_in_force = self._get_fut_params(symbol, price, qty, order_type, time_in_force)
-
+        if symbol.endswith("usdt"):
+            api = self.um_perp
+        elif symbol.endswith("usd"):
+            api = self.cm_perp
+        else:
+            api = self.um_perp
         try:
             # Place a limit buy order to close a short position
-            _, response, error = self.um_perp.send_order(
+            _, response, error = api.send_order(
                 symbol=symbol,
                 amount=qty,
                 order_side="BUY",
