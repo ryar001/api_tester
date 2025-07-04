@@ -321,7 +321,7 @@ class OkxApi(RestBaseClass):
         Returns:
             dict: Order response
         '''
-        params = self._get_order_params(symbol, price, quantity, order_type,td_mode)
+        params = self._get_order_params(symbol, price, quantity, order_type,td_mode,is_fut=True)
         print(f"open short fut params: {params}")
         # Place a futures sell order to open a short position
         result = self.trade_api.place_order(
