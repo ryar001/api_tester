@@ -308,6 +308,7 @@ class XtApi(RestBaseClass):
             # Call the perp API to get account balance
             _, response, error = self.um_perp.get_account_capital()
             _, cm_reponse, error = self.cm_perp.get_account_capital()
+            breakpoint()
             if error:
                 return {"error": error}
             return response
