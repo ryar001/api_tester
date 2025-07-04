@@ -83,9 +83,10 @@ class XtApi(RestBaseClass):
         try:
             # Call the perp API to get positions for the default symbol
             _, success, error = self.um_perp.get_position(self.default_symbol)
+            _, cm_success, error = self.cm_perp.get_position(self.default_symbol)
             if error:
                 return {"error": error}
-            return success
+            return success, cm_success
         except Exception as e:
             print(f"Error getting futures position: {e}")
             return {"error": str(e)}
@@ -308,10 +309,9 @@ class XtApi(RestBaseClass):
             # Call the perp API to get account balance
             _, response, error = self.um_perp.get_account_capital()
             _, cm_reponse, error = self.cm_perp.get_account_capital()
-            breakpoint()
             if error:
                 return {"error": error}
-            return response
+            return response, cm_reponse
         except Exception as e:
             print(f"Error getting futures account balance: {e}")
             return {"error": str(e)}
