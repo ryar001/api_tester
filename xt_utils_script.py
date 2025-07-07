@@ -413,6 +413,7 @@ class XtUtils:
         Returns:
             dict: Transfer response
         """
+        print(f"Transferring {amount} {currency} from {from_account} to {to_account}")
         return self.client.transfer(from_account, to_account, currency, amount)
 
     def get_spot_trades(self, symbol=None, biz_type="SPOT"):
@@ -985,12 +986,12 @@ xt:
             price_input = input("Enter price (leave empty for auto-calculated price): ")
             if price_input:
                 price = float(price_input)
-            else:
-                # get current price
-                price = self.acct.get_spot_price(symbol)
-                if not price:
-                    self.print_response("Error", "Failed to get current price")
-                    return
+        if not price:
+            # get current price
+            price = self.acct.get_spot_price(symbol)
+            if not price:
+                self.print_response("Error", "Failed to get current price")
+                return
 
         time_in_force = input("Enter time in force,For Market order only FOK/IOC is valid (GTC, IOC, FOK, leave empty for GTC): ").upper() or "GTC"
 
@@ -1162,11 +1163,11 @@ xt:
     def handle_transfer(self):
         """Handle transfer between accounts request"""
         print("\nAvailable account types:")
-        print("  SPOT: Spot")
-        print("  LEVER: Margin")
-        print("  FINANCE: Finance")
-        print("  FUTURES_U: USDT-M Futures")
-        print("  FUTURES_C: Coin-M Futures")
+        print("  SPOT : Spot")
+        print("  LEVER : Margin")
+        print("  FINANCE : Finance")
+        print("  FUTURES_U : USDT-M Futures")
+        print("  FUTURES_C : Coin-M Futures")
         print()
 
         from_account = input("Enter source account type: ")
