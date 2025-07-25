@@ -73,6 +73,26 @@ class XtApi(RestBaseClass):
             print(f"Error getting spot balance: {e}")
             return {"error": str(e)}
 
+    def _get_position(self,api, symbol=None):
+        """
+        get_position
+        :return:
+        """
+        bodymod = "application/x-www-form-urlencoded"
+        path = "/future/user" + '/v1/position/list'
+        url = api.host + path
+        params = None
+        if symbol:
+            params = {
+                "symbol": symbol,
+            }
+
+        header = api.um_perp_create_sign(api.__access_key, api.__secret_key, path=path, bodymod=bodymod,
+                                   params=params)
+        header["Content-Type"] = "application/x-www-form-urlencoded"
+        code, success, error = api._fetch(method="GET", url=url, headers=header, params=params, timeout=api.timeout)
+        return code, success, error
+
     def get_fut_position(self):
         '''
         Test futures/swap read - get futures positions
@@ -82,8 +102,8 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Call the perp API to get positions for the default symbol
-            _, success, error = self.um_perp.get_position(None)
-            _, cm_success, error = self.cm_perp.get_position(None)
+            _, success, error = self._get_position(self.um_perp)
+            _, cm_success, error = self._get_position(self.cm_perp,None)
             if error:
                 return {"error": error}
             return {
