@@ -73,7 +73,7 @@ class XtApi(RestBaseClass):
             print(f"Error getting spot balance: {e}")
             return {"error": str(e)}
 
-    def _get_position(self,api, symbol=None):
+    def _get_position(self,api:Perp, symbol=None):
         """
         get_position
         :return:
@@ -87,7 +87,7 @@ class XtApi(RestBaseClass):
                 "symbol": symbol,
             }
 
-        header = api._create_sign(api.__access_key, api.__secret_key, path=path, bodymod=bodymod,
+        header = api._create_sign(self.api_key, self.api_secret, path=path, bodymod=bodymod,
                                    params=params)
         header["Content-Type"] = "application/x-www-form-urlencoded"
         code, success, error = api._fetch(method="GET", url=url, headers=header, params=params, timeout=api.timeout)
