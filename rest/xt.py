@@ -87,7 +87,7 @@ class XtApi(RestBaseClass):
                 "symbol": symbol,
             }
 
-        header = api.um_perp_create_sign(api.__access_key, api.__secret_key, path=path, bodymod=bodymod,
+        header = api._create_sign(api.__access_key, api.__secret_key, path=path, bodymod=bodymod,
                                    params=params)
         header["Content-Type"] = "application/x-www-form-urlencoded"
         code, success, error = api._fetch(method="GET", url=url, headers=header, params=params, timeout=api.timeout)
