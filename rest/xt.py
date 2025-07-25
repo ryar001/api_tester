@@ -82,8 +82,8 @@ class XtApi(RestBaseClass):
         '''
         try:
             # Call the perp API to get positions for the default symbol
-            _, success, error = self.um_perp.get_position()
-            _, cm_success, error = self.cm_perp.get_position()
+            _, success, error = self.um_perp.get_position(None)
+            _, cm_success, error = self.cm_perp.get_position(None)
             if error:
                 return {"error": error}
             return {
