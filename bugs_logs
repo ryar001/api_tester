@@ -1,0 +1,4 @@
+120625
+- floating point , 1000.0 not being accepting by exchange with qty precision of 0
+  - SOLVED
+    - removed the ending 0 if can be int
