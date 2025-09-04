@@ -894,12 +894,12 @@ xt:
     def handle_spot_open_orders(self):
         """Handle spot open orders request"""
         res = self.acct.get_spot_open_orders()
-        self.print_response("Spot Open Orders", f"{res}\nNo. of orders: {len(res)}")
+        self.print_response("Spot Open Orders", f"{res}\n\n\nNo. of orders: {len(res)}")
 
     def handle_fut_open_orders(self):
         """Handle futures open orders request"""
         res = self.acct.get_fut_open_orders()
-        self.print_response("Futures Open Orders", f"{res}\nNo. of orders: {len(res)}")
+        self.print_response("Futures Open Orders", f"{res}\n\n\nNo. of orders: {len(res)}")
 
     def handle_spot_fee(self):
         """Handle spot fee request"""
