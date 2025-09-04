@@ -668,7 +668,7 @@ okx:
                 api_secret = key_data['api_secret']
                 passphrase = key_data['passphrase']
                 use_simulated = key_data.get('use_simulated', True)
-
+                print(f"Loading account: {name}, api_key: {api_key}, api_secret: {api_secret}, passphrase: {passphrase}, use_simulated: {use_simulated}")
                 # Initialize the OKX Utils
                 okx_utils = OkxUtils(
                     api_key=api_key,

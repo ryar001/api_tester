@@ -1,11 +1,55 @@
 
-from binance.spot import Spot
-from binance.um_futures import UMFutures as Futures
-from api_tester.rest.baseclass import RestBaseClass
+from binance_sdk_spot.spot import SpotRestAPI
+from binance_sdk_wallet.wallet import WalletRestAPI
+from binance_sdk_derivatives_trading_usds_futures.derivatives_trading_usds_futures import DerivativesTradingUsdsFuturesRestAPI as UMFutures
+from binance_common.configuration import ConfigurationRestAPI
+from rest.baseclass import RestBaseClass
 import math
+import json
 
 
 class binanceApi(RestBaseClass):
+
+    @staticmethod
+    def _extract_response_data(response):
+        """
+        Helper function to extract data from Binance SDK ApiResponse objects.
+
+        Args:
+            response: The response object from Binance SDK
+
+        Returns:
+            dict or list: The extracted data
+        """
+        if response is None:
+            return None
+
+        # If it's already a dict or list, return as is
+        if isinstance(response, (dict, list, str, int, float)):
+            return response
+
+        # Try to get data attribute
+        if hasattr(response, 'data'):
+            return response.data
+
+        # Try to convert to dict
+        if hasattr(response, 'to_dict'):
+            return response.to_dict()
+
+        # Try to get the actual_instance attribute (common in OpenAPI generated clients)
+        if hasattr(response, 'actual_instance'):
+            return response.actual_instance
+
+        # Try to serialize to JSON and back (last resort)
+        try:
+            if hasattr(response, '__dict__'):
+                return response.__dict__
+        except:
+            pass
+
+        # If all else fails, return string representation
+        return str(response)
+
     def __init__(self, spot_host="",perp_host="",api_key="", api_secret="",default_symbol="BTCUSDT",default_quantity=0.001):
         '''
         Initialize the API client
@@ -15,8 +59,9 @@ class binanceApi(RestBaseClass):
         self.api_key = api_key
         self.api_secret = api_secret
         # Placeholder initialization
-        self.spot_client = Spot(api_key=api_key, api_secret=api_secret, base_url=self.spot_host)
-        self.futures_client = Futures(key=api_key, secret=api_secret, base_url=self.perp_host)
+        self.spot_client:SpotRestAPI = SpotRestAPI(configuration=ConfigurationRestAPI(api_key=api_key, api_secret=api_secret, base_path=self.spot_host))
+        self.futures_client:UMFutures = UMFutures(configuration=ConfigurationRestAPI(api_key=api_key, api_secret=api_secret, base_path=self.perp_host))
+        self.wallet_client:WalletRestAPI = WalletRestAPI(configuration=ConfigurationRestAPI(api_key=api_key, api_secret=api_secret, base_path=self.spot_host))
         # Set default trading parameters
         self.default_symbol = default_symbol
         self.default_quantity = default_quantity
@@ -41,7 +86,8 @@ class binanceApi(RestBaseClass):
             toSymbol (str, optional): Must be sent when type are MARGIN_ISOLATEDMARGIN and ISOLATEDMARGIN_ISOLATEDMARGIN
             recvWindow (int, optional): The value cannot be greater than 60000
         """
-        return self.spot_client.user_universal_transfer(type,asset,amount,**kwargs)
+        result = self.wallet_client.user_universal_transfer(type=type,asset=asset,amount=amount,**kwargs)
+        return self._extract_response_data(result)
 
     def send_usdt_from_spot_to_pm(self,amount:float):
         '''send usdt from spot to pm'''
@@ -61,13 +107,29 @@ class binanceApi(RestBaseClass):
             if symbol is None:
                 symbol = self.default_symbol
             exchange_info = self.spot_client.exchange_info(symbol=symbol)
-            return exchange_info
+            return self._extract_response_data(exchange_info)
         except Exception as e:
             print(f"Error getting spot config: {e}")
             return None
         
-    def get_spot_trades(self,**kwargs):
-        ''''''
+    def get_spot_trades(self, symbol=None, **kwargs):
+        '''
+        Test spot read - get account trades
+
+        Args:
+            symbol (str, optional): Symbol to get trades for. Defaults to None.
+
+        Returns:
+            dict: Account trades
+        '''
+        try:
+            if symbol is None:
+                symbol = self.default_symbol
+            trades = self.spot_client.my_trades(symbol=symbol, **kwargs)
+            return self._extract_response_data(trades)
+        except Exception as e:
+            print(f"Error getting spot trades: {e}")
+            return {"error": str(e)}
         
     def get_um_price(self, symbol=None):
         '''
@@ -80,7 +142,14 @@ class binanceApi(RestBaseClass):
             symbol = self.default_symbol
         try:
             # Use the UM mark price endpoint for PM
-            return float(self.futures_client.mark_price(symbol=symbol).get("markPrice"))
+            mark_price_response = self.futures_client.mark_price(symbol=symbol)
+            mark_price_data = self._extract_response_data(mark_price_response)
+            if isinstance(mark_price_data, dict) and "markPrice" in mark_price_data:
+                return float(mark_price_data["markPrice"])
+            elif isinstance(mark_price_data, list) and len(mark_price_data) > 0 and "markPrice" in mark_price_data[0]:
+                return float(mark_price_data[0]["markPrice"])
+            else:
+                return {"error": f"Unexpected mark price response format: {mark_price_data}"}
         except Exception as e:
             print(f"Error getting futures mark price: {e}")
             return {"error": str(e)}
@@ -95,8 +164,12 @@ class binanceApi(RestBaseClass):
         print("Getting spot balance")
         # Implement using binance-connector-python
         try:
-            account_info = self.spot_client.account()
-            return account_info.get('balances', [])
+            account_info = self.spot_client.get_account()
+            account_data = self._extract_response_data(account_info)
+            if isinstance(account_data, dict) and 'balances' in account_data:
+                return account_data.get('balances', [])
+            else:
+                return account_data
         except Exception as e:
             print(f"Error getting spot balance: {e}")
             return {"error": str(e)}
@@ -112,8 +185,8 @@ class binanceApi(RestBaseClass):
         # Implement using binance-futures-connector-python
         try:
             # This endpoint gets all positions, filter as needed
-            positions = self.futures_client.get_position_risk()
-            return positions
+            positions = self.futures_client.position_information_v2()
+            return self._extract_response_data(positions)
         except Exception as e:
             print(f"Error getting futures position: {e}")
             return {"error": str(e)}
@@ -132,7 +205,7 @@ class binanceApi(RestBaseClass):
             if symbol is None:
                 symbol = self.default_symbol
             ticker = self.spot_client.ticker_price(symbol=symbol)
-            return ticker
+            return self._extract_response_data(ticker)
         except Exception as e:
             print(f"Error getting spot price: {e}")
             return None
@@ -174,8 +247,9 @@ class binanceApi(RestBaseClass):
             }
 
             order_result = self.spot_client.new_order(**params)
-            print(f"Spot buy order placed: {order_result}")
-            return order_result
+            order_data = self._extract_response_data(order_result)
+            print(f"Spot buy order placed: {order_data}")
+            return order_data
         except Exception as e:
             print(f"Error placing spot buy order: {e}")
             return {"error": str(e)}
@@ -216,8 +290,9 @@ class binanceApi(RestBaseClass):
             }
 
             order_result = self.spot_client.new_order(**params)
-            print(f"Spot sell order placed: {order_result}")
-            return order_result
+            order_data = self._extract_response_data(order_result)
+            print(f"Spot sell order placed: {self.default_symbol}")
+            return order_data
         except Exception as e:
             print(f"Error placing spot sell order: {e}")
             return {"error": str(e)}
@@ -235,12 +310,13 @@ class binanceApi(RestBaseClass):
         try:
             if symbol is None:
                 symbol = self.default_symbol
-            exchange_info = self.futures_client.exchange_info()
-            if symbol:
+            exchange_info = self.futures_client.exchange_information()
+            exchange_data = self._extract_response_data(exchange_info)
+            if symbol and isinstance(exchange_data, dict) and 'symbols' in exchange_data:
                 # Filter for the specific symbol
-                symbols_info = [s for s in exchange_info.get('symbols', []) if s.get('symbol') == symbol]
+                symbols_info = [s for s in exchange_data.get('symbols', []) if s.get('symbol') == symbol]
                 return symbols_info
-            return exchange_info
+            return exchange_data
         except Exception as e:
             print(f"Error getting futures market config: {e}")
             return None
@@ -253,8 +329,8 @@ class binanceApi(RestBaseClass):
             dict: Order response
         '''
         try:
-            response = self.spot_client.cancel_open_orders(symbol=self.default_symbol)
-            return response
+            response = self.spot_client.delete_open_orders(symbol=self.default_symbol)
+            return self._extract_response_data(response)
         except Exception as e:
             print(f"Error canceling open spot orders: {e}")
             return {"error": str(e)}
@@ -267,8 +343,8 @@ class binanceApi(RestBaseClass):
             dict: Order response
         '''
         try:
-            response = self.futures_client.cancel_open_orders(symbol=self.default_symbol)
-            return response
+            response = self.futures_client.cancel_all_open_orders(symbol=self.default_symbol)
+            return self._extract_response_data(response)
         except Exception as e:
             print(f"Error canceling open futures orders: {e}")
             return {"error": str(e)}
@@ -281,8 +357,8 @@ class binanceApi(RestBaseClass):
             dict: Futures account balance
         '''
         try:
-            response = self.futures_client.balance()
-            return response
+            response = self.futures_client.futures_account_balance_v2()
+            return self._extract_response_data(response)
         except Exception as e:
             print(f"Error getting futures account balance: {e}")
             return {"error": str(e)}
@@ -299,11 +375,18 @@ class binanceApi(RestBaseClass):
         try:
             # Get current price to calculate a price below market
             ticker = self.futures_client.mark_price(symbol=self.default_symbol)
-            if not ticker:
+            ticker_data = self._extract_response_data(ticker)
+            if not ticker_data:
                 return {"error": "Failed to get mark price data"}
 
-            # Place a limit buy order at 90% of current price to avoid execution
-            current_price = float(ticker['markPrice'])
+            # Extract mark price from response
+            if isinstance(ticker_data, dict) and "markPrice" in ticker_data:
+                current_price = float(ticker_data["markPrice"])
+            elif isinstance(ticker_data, list) and len(ticker_data) > 0 and "markPrice" in ticker_data[0]:
+                current_price = float(ticker_data[0]["markPrice"])
+            else:
+                return {"error": f"Unexpected mark price response format: {ticker_data}"}
+
             buy_price = round(current_price * 0.9, price_prec)
 
             # convert size to contract
@@ -322,8 +405,9 @@ class binanceApi(RestBaseClass):
             }
 
             order_result = self.futures_client.new_order(**params)
-            print(f"Futures long order placed: {order_result}")
-            return order_result
+            order_data = self._extract_response_data(order_result)
+            print(f"Futures long order placed: {order_data}")
+            return order_data
         except Exception as e:
             print(f"Error opening long futures position: {e}")
             return {"error": str(e)}
@@ -340,11 +424,18 @@ class binanceApi(RestBaseClass):
         try:
             # Get current price to calculate a price above market
             ticker = self.futures_client.mark_price(symbol=self.default_symbol)
-            if not ticker:
+            ticker_data = self._extract_response_data(ticker)
+            if not ticker_data:
                 return {"error": "Failed to get mark price data"}
 
-            # Place a limit sell order at 110% of current price to avoid execution
-            current_price = float(ticker['markPrice'])
+            # Extract mark price from response
+            if isinstance(ticker_data, dict) and "markPrice" in ticker_data:
+                current_price = float(ticker_data["markPrice"])
+            elif isinstance(ticker_data, list) and len(ticker_data) > 0 and "markPrice" in ticker_data[0]:
+                current_price = float(ticker_data[0]["markPrice"])
+            else:
+                return {"error": f"Unexpected mark price response format: {ticker_data}"}
+
             sell_price = round(current_price * 1.1, price_prec)
 
             # convert size to contract
@@ -363,8 +454,9 @@ class binanceApi(RestBaseClass):
             }
 
             order_result = self.futures_client.new_order(**params)
-            print(f"Futures close long order placed: {order_result}")
-            return order_result
+            order_data = self._extract_response_data(order_result)
+            print(f"Futures close long order placed: {order_data}")
+            return order_data
         except Exception as e:
             print(f"Error closing long futures position: {e}")
             return {"error": str(e)}
@@ -378,7 +470,7 @@ class binanceApi(RestBaseClass):
         '''
         try:
             response = self.spot_client.get_open_orders(symbol=self.default_symbol)
-            return response
+            return self._extract_response_data(response)
         except Exception as e:
             print(f"Error getting open spot orders: {e}")
             return {"error": str(e)}
@@ -391,8 +483,8 @@ class binanceApi(RestBaseClass):
             dict: Open orders
         '''
         try:
-            response = self.futures_client.get_orders(symbol=self.default_symbol)
-            return response
+            response = self.futures_client.query_current_open_order(symbol=self.default_symbol)
+            return self._extract_response_data(response)
         except Exception as e:
             print(f"Error getting open futures orders: {e}")
             return {"error": str(e)}
@@ -405,8 +497,8 @@ class binanceApi(RestBaseClass):
             dict: Futures positions
         '''
         # Fetch SWAP positions for the specified symbol
-        result = self.spot_client.account()
-        return result
+        result = self.spot_client.get_account()
+        return self._extract_response_data(result)
     
     def get_spot_comms_rate(self,symbol=None):
         '''
@@ -418,8 +510,8 @@ class binanceApi(RestBaseClass):
         if symbol is None:
             symbol = self.default_symbol
         # Fetch SWAP positions for the specified symbol
-        result = self.spot_client.query_commission_rates(symbol=symbol)
-        return result
+        result = self.spot_client.account_commission(symbol=symbol)
+        return self._extract_response_data(result)
     
     def get_um_comms_rate(self,symbol=None):
         '''
@@ -431,8 +523,8 @@ class binanceApi(RestBaseClass):
         if symbol is None:
             symbol = self.default_symbol
         # Fetch SWAP positions for the specified symbol
-        result = self.futures_client.commission_rate(symbol=symbol)
-        return result
+        result = self.futures_client.user_commission_rate(symbol=symbol)
+        return self._extract_response_data(result)
 
 if __name__== "__main__":
     import yaml

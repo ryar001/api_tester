@@ -11,7 +11,7 @@ from rest.binance_PM_addon import BinancePmTestWrapper
 class BinancePmUtils:
     """Utility class for interacting with Binance Portfolio Margin API."""
 
-    def __init__(self, api_key: str, api_secret: str, pm_host: str = "https://papi.binance.com",
+    def __init__(self, api_key: str, api_secret: str, spot_host: str = "https://api.binance.com", perp_host: str = "https://fapi.binance.com", pm_host: str = "https://papi.binance.com",
                  default_symbol: str = "BTCUSDT", default_quantity: float = 0.001):
         """
         Initialize the Binance PM Utils.
@@ -30,6 +30,8 @@ class BinancePmUtils:
         self.default_quantity = default_quantity
 
         self.client = BinancePmTestWrapper(
+            spot_host=self.spot_host,
+            perp_host=self.perp_host,
             pm_host=self.pm_host,
             api_key=self.api_key,
             api_secret=self.api_secret,
@@ -396,7 +398,10 @@ class BinancePmUtilsApp:
                 try:
                     api_key = key_data['api_key']
                     api_secret = key_data['api_secret']
-                    self.accounts[name] = BinancePmUtils(api_key, api_secret)
+                    spot_host = key_data.get('spot_host', 'https://api.binance.com')
+                    perp_host = key_data.get('perp_host', 'https://fapi.binance.com')
+                    pm_host = key_data.get('pm_host', 'https://papi.binance.com')
+                    self.accounts[name] = BinancePmUtils(api_key, api_secret, spot_host=spot_host, perp_host=perp_host, pm_host=pm_host)
                 except KeyError:
                     print(f"Missing API key or secret for account: {name}")
 

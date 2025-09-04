@@ -1,9 +1,19 @@
-[project]
+vscode-remote://tunnel%2Bjinshidiannaodemacbo/Users/jinshidiannao/Documents/asset_management/GEMINI.md[project]
 name = "api-tester"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "binance-sdk-derivatives-trading-portfolio-margin>=1.2.0",
+    "binance-sdk-derivatives-trading-usds-futures>=1.2.0",
+    "binance-sdk-margin-trading>=1.2.0",
+    "binance-sdk-spot>=1.2.0",
+    "binance-sdk-wallet>=1.2.0",
+    "python-okx>=0.4.0",
     "pyxt>=0.6.24",
+    "pyyaml>=6.0.2",
 ]
+
+[tool.setuptools.packages]
+find = {include = ["api_tester", "api_tester.*"]}

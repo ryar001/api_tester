@@ -48,6 +48,8 @@ class OkxApi(RestBaseClass):
         self.public_api = PublicAPI(flag=self.flag)
         # Add other APIs if needed, e.g., self.public_api = PublicAPI.PublicAPI(...)
 
+        print(f"OKX API client initialized, simulated: {self.use_simulated}")
+
     def get_spot_config(self, symbol=None):
         '''
         Test spot read - get market config

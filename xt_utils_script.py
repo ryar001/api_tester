@@ -2,6 +2,7 @@ import sys
 import yaml
 import json
 from pathlib import Path
+import pandas as pd
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent))
 from rest.xt import XtApi
@@ -124,6 +125,21 @@ class XtUtils:
             dict: Open spot orders
         """
         return self.client.get_spot_open_orders()
+    
+    def get_spot_trades(self, symbol=None, biz_type="SPOT", limit=100):
+        """
+        Get spot account trade history
+
+        Args:
+            symbol (str, optional): Symbol to get trades for. Defaults to None (uses default symbol).
+            biz_type (str, optional): BizType to get trades for. Defaults to "SPOT".
+            limit (int, optional): Maximum number of trades to return. Defaults to 100.
+
+        Returns:
+            dict: Spot trade history
+        """
+        return self.client.get_spot_trades(symbol, biz_type, limit)
+
 
     def get_fut_open_orders(self):
         """
@@ -393,7 +409,7 @@ class XtUtils:
         """
         return self.client.cancel_fut_open_orders(symbol=symbol)
 
-    def transfer(self, from_account, to_account, currency, amount):
+    def transfer(self, from_account, to_account, currency, amount, symbol):
         """
         Transfer assets between accounts
 
@@ -408,26 +424,24 @@ class XtUtils:
             from_account (str): Source account type (BizType)
             to_account (str): Destination account type (BizType)
             currency (str): Currency name (must be lowercase, e.g., usdt, btc)
+            symbol (str): Symbol name (must be uppercase, e.g., BTCUSDT)
             amount (float): Amount to transfer
 
         Returns:
             dict: Transfer response
         """
         print(f"Transferring {amount} {currency} from {from_account} to {to_account}")
-        return self.client.transfer(from_account, to_account, currency, amount)
+        return self.client.transfer(from_account, to_account, currency, amount, symbol)
 
-    def get_spot_trades(self, symbol=None, biz_type="SPOT"):
-        """
-        Get spot account trade history
-
-        Args:
-            symbol (str, optional): Symbol to get trades for. Defaults to None (uses default symbol).
-            biz_type (str, optional): BizType to get trades for. Defaults to "SPOT".
-
-        Returns:
-            dict: Spot trade history
-        """
-        return self.client.get_spot_trades(symbol, biz_type)
+    def handle_get_spot_trades(self):
+        """Handle get spot trades request"""
+        symbol = input(f"Enter symbol (leave empty for default {self.acct.default_symbol}): ")
+        biz_type = input("Enter BizType (leave empty for SPOT): ") or "SPOT"
+        output_csv = input("Output to CSV? (yes/no, default: no): ").lower() == 'yes'
+        if not symbol:
+            symbol = None
+        self.print_response(f"Spot Trades for {symbol or self.acct.default_symbol}",
+                           self.acct.get_spot_trades(symbol, biz_type, to_csv=output_csv))
 
     def get_um_trades(self, symbol=None, direction=None, oid=None, limit=5, start_time=None, end_time=None):
         """
@@ -697,11 +711,11 @@ class XtUtilsApp:
             print("""
 xt:
   read_only_1:
-    api_key: "your_api_key"
-    api_secret: "your_api_secret"
+    api_key: \"your_api_key\"
+    api_secret: \"your_api_secret\"
   read_write_2:
-    api_key: "another_api_key"
-    api_secret: "another_api_secret"
+    api_key: \"another_api_key\"
+    api_secret: \"another_api_secret\"
             """)
             return False
         except yaml.YAMLError:
@@ -879,11 +893,13 @@ xt:
 
     def handle_spot_open_orders(self):
         """Handle spot open orders request"""
-        self.print_response("Spot Open Orders", self.acct.get_spot_open_orders())
+        res = self.acct.get_spot_open_orders()
+        self.print_response("Spot Open Orders", f"{res}\nNo. of orders: {len(res)}")
 
     def handle_fut_open_orders(self):
         """Handle futures open orders request"""
-        self.print_response("Futures Open Orders", self.acct.get_fut_open_orders())
+        res = self.acct.get_fut_open_orders()
+        self.print_response("Futures Open Orders", f"{res}\nNo. of orders: {len(res)}")
 
     def handle_spot_fee(self):
         """Handle spot fee request"""
@@ -903,8 +919,23 @@ xt:
         biz_type = input("Enter BizType (leave empty for SPOT): ") or "SPOT"
         if not symbol:
             symbol = None
-        self.print_response(f"Spot Trades for {symbol or self.acct.default_symbol}",
-                           self.acct.get_spot_trades(symbol, biz_type))
+        output_csv = input("Output to CSV? (yes/no, default: no): ").lower() in ['yes', 'y']
+        limit = 20
+        if output_csv:
+            limit = input("Enter limit (leave empty for default 100): ")
+            if limit:
+                limit = int(limit)
+            else:
+                limit = 100
+        data = self.acct.get_spot_trades(symbol, biz_type, limit)
+        if not output_csv:
+            print(f"Spot Trades for {symbol or self.acct.default_symbol}",
+                               self.acct.get_spot_trades(symbol, biz_type))
+            return
+        
+        print(f"Spot trades for {symbol or self.acct.default_symbol} written to spot_trades_{symbol or self.acct.default_symbol}.csv")
+        data_df = pd.DataFrame(data["items"])
+        data_df.to_csv(f"spot_trades_{symbol or self.acct.default_symbol}.csv", index=False)
 
     def handle_get_um_trades(self):
         """Handle get futures trades request"""
@@ -1173,10 +1204,11 @@ xt:
         from_account = input("Enter source account type: ")
         to_account = input("Enter destination account type: ")
         currency = input("Enter currency (lowercase, e.g., usdt, btc): ")
+        symbol = input("Enter symbol: ")
         amount = float(input("Enter amount: "))
 
         self.print_response("Transfer Result",
-                          self.acct.transfer(from_account, to_account, currency, amount))
+                          self.acct.transfer(from_account, to_account, currency, amount, symbol))
 
     def handle_get_spot_hist_orders(self):
         """Handle get spot historical orders request"""

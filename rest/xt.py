@@ -751,7 +751,7 @@ class XtApi(RestBaseClass):
         }
         return _out
 
-    def transfer(self,from_account,to_account,currency,amount):
+    def transfer(self,from_account,to_account,currency,amount,symbol:str,biz_id:str=None):
         """
         BizType
         Status	Description
@@ -767,9 +767,18 @@ class XtApi(RestBaseClass):
         @param amount:
         @return:
         """
-        return self.spot.transfer(from_account,to_account,currency,amount)
+        params = {
+            "bizId": biz_id if biz_id else "1",
+            "from": from_account,
+            "to": to_account,
+            "currency": currency,
+            "amount": amount,
+            "symbol": symbol,
+        }
+        res = self.spot.req_post("/v4/balance/transfer", params, auth=True)
+        return res['result']
 
-    def get_spot_trades(self, symbol=None, biz_type="SPOT"):
+    def get_spot_trades(self, symbol=None, biz_type="SPOT",limit=100, start_time=None, end_time=None):
         """
         Get spot trades for a symbol
 
@@ -782,9 +791,17 @@ class XtApi(RestBaseClass):
         """
         if not symbol:
             symbol = self.default_symbol
+        params = {
+            "symbol": symbol,
+            "limit": limit,
+        }
+        if start_time:
+            params["startTime"] = start_time
+        if end_time:
+            params["endTime"] = end_time
 
         # Note: biz_type is currently not used in the implementation but kept for API consistency
-        return self.spot.get_trade(symbol)
+        return self.spot.get_trade(**params)
     
     def get_spot_hist_orders(self, symbol=None, biz_type=None, side=None, type=None, order_id=None, from_id=None,
                            direction=None, limit=None, start_time=None, end_time=None, hidden_canceled=None):

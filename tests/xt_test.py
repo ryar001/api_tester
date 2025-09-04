@@ -25,7 +25,7 @@ XT_HOST = {
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # add the rest dir
-breakpoint()
+
 sys.path.append(str(Path(__file__).parent.parent / 'rest'))
 
 from api_tester.rest.xt import XtApi
@@ -79,7 +79,7 @@ class TestResult:
 
         # Print results grouped by API key
         for key_name, results in self.test_result_dict.items():
-            print(f"\n=============== Results for {key_name} ===============")
+            print(f"\n=============== Results for {key_name} ==============")
             key_passed = sum(1 for r in results if r["status"] == "PASSED")
             key_total = len(results)
             print(f"Passed: {key_passed}/{key_total} ({key_passed/key_total*100:.1f}%)")
@@ -255,7 +255,7 @@ def validate_write_operation(test_results, key_name, response, operation_name, k
 
             # Check if any of the expected errors are in the error message
             for err in expected_errors:
-                if err in error_msg:
+                if err and err in error_msg:
                     test_results.add_result(
                         f"{key_name}: {operation_name}",
                         True,
@@ -274,7 +274,7 @@ def validate_write_operation(test_results, key_name, response, operation_name, k
             # For read-write keys, errors might be due to implementation issues
             # Check if any of the expected errors are in the error message
             for err in expected_errors:
-                if err in error_msg:
+                if err and err in error_msg:
                     test_results.add_result(
                         f"{key_name}: {operation_name}",
                         True,
@@ -480,7 +480,56 @@ def test_fee_info(test_results, xt_api, key_name):
 
     return True
 
+def test_get_spot_trades_to_csv(test_results, xt_api, key_name, key_type, symbol):
+    """
+    Test get_spot_trades with to_csv=True option.
+    """
+    print("\n--- Testing Get Spot Trades to CSV ---")
+    filename = f"spot_trades_{symbol or 'all'}.csv"
+    # Clean up any existing file
+    if os.path.exists(filename):
+        os.remove(filename)
+
+    response = xt_api.get_spot_trades(symbol=symbol, biz_type="SPOT", to_csv=True)
+    print_response("Get Spot Trades to CSV", response)
+
+    # Verify file creation and content
+    if os.path.exists(filename):
+        try:
+            with open(filename, 'r') as f:
+                reader = csv.reader(f)
+                header = next(reader)  # Read header
+                rows = list(reader)    # Read remaining rows
+            
+            if len(rows) > 0 and len(header) > 0: # Check if there's at least one row and header
+                test_results.add_result(
+                    f"{key_name}: Get Spot Trades to CSV",
+                    True,
+                    f"Successfully created and verified CSV file: {filename}"
+                )
+            else:
+                test_results.add_result(
+                    f"{key_name}: Get Spot Trades to CSV",
+                    False,
+                    f"CSV file {filename} is empty or has no header."
+                )
+        except Exception as e:
+            test_results.add_result(
+                f"{key_name}: Get Spot Trades to CSV",
+                False,
+                f"Error reading CSV file {filename}: {e}"
+            )
+        finally:
+            os.remove(filename) # Clean up
+    else:
+        test_results.add_result(
+            f"{key_name}: Get Spot Trades to CSV",
+            False,
+            f"CSV file {filename} was not created."
+        )
+
 def test_api_key(test_results, key_name, api_key, api_secret, key_type, is_qa, symbol="eth_usdt", quantity=0.02):
+
     """
     Test operations with the given API key.
 
@@ -521,6 +570,7 @@ def test_api_key(test_results, key_name, api_key, api_secret, key_type, is_qa, s
         test_futures_balance(test_results, xt_api, key_name, key_type)
         test_futures_position(test_results, xt_api, key_name, key_type)
         test_futures_orders(test_results, xt_api, key_name, key_type)
+        test_get_spot_trades_to_csv(test_results, xt_api, key_name, key_type, symbol)
 
         # Get fee information
         test_fee_info(test_results, xt_api, key_name)
@@ -633,7 +683,7 @@ if __name__ == "__main__":
     # Run the tests
     start_time = time.time()
     results = run_tests(is_qa=False)
-    end_time = time.time()
+    end_time = time.time() # This line was missing in the original string
 
     print(f"\nTests completed in {end_time - start_time:.2f} seconds.")
     print("\nExpected results:")
@@ -648,7 +698,6 @@ if __name__ == "__main__":
         print(f"\n--- {key_name} Fee Information ---")
         spot_fee = fee_info["spot_fee"]
         um_fee = fee_info["um_fee"]
-        print(f"Spot Fees: {spot_fee}")
         print(f"UM Fees: {um_fee}")
 
     # Return a non-zero exit code if any tests failed
