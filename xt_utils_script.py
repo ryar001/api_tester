@@ -1,6 +1,7 @@
 import sys
 import yaml
 import json
+from datetime import datetime
 from pathlib import Path
 import pandas as pd
 sys.path.append(str(Path(__file__).parent.parent))
@@ -896,6 +897,16 @@ xt:
         res = self.acct.get_spot_open_orders()
         self.print_response("Spot Open Orders", res)
         print(f"\n\nNumber of open orders: {len(res)}")
+        # Convert timestamps to datetime objects
+        # res = [datetime.fromtimestamp(timestamp['time']/1000).strftime("%Y-%m-%d %H:%M:%S") for timestamp in res]
+        for order in res:
+            order['time'] = datetime.fromtimestamp(order['time']/1000).strftime("%Y-%m-%d %H:%M:%S")
+        long_ords = [o for o in res if o['side'] == 'BUY']
+        short_ords = [o for o in res if o['side'] == 'SELL']
+        highest_buy = max(long_ords, key=lambda x: float(x['price'])) if long_ords else None
+        lowest_sell = min(short_ords, key=lambda x: float(x['price'])) if short_ords else None
+        print(f"Highest buy: {highest_buy}")
+        print(f"Lowest sell: {lowest_sell}")
 
     def handle_fut_open_orders(self):
         """Handle futures open orders request"""
