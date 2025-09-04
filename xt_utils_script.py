@@ -903,8 +903,8 @@ xt:
             order['time'] = datetime.fromtimestamp(order['time']/1000).strftime("%Y-%m-%d %H:%M:%S")
         long_ords = [o for o in res if o['side'] == 'BUY']
         short_ords = [o for o in res if o['side'] == 'SELL']
-        highest_buy = max(long_ords, key=lambda x: float(x['price'])) if long_ords else None
-        lowest_sell = min(short_ords, key=lambda x: float(x['price'])) if short_ords else None
+        highest_buy = max([float(i['price']) for i in long_ords]) if long_ords else None
+        lowest_sell = min([float(i['price']) for i in short_ords]) if short_ords else None
         print(f"Highest buy: {highest_buy}")
         print(f"Lowest sell: {lowest_sell}")
 
