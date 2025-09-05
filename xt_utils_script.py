@@ -1220,7 +1220,7 @@ xt:
         currency = input("Enter currency (lowercase, e.g., usdt, btc): ")
         symbol = input("Enter symbol: ")
         biz_id = input("Enter bizId (leave empty for auto-generated): ")
-        biz_id = biz_id if biz_id else random.randint(0,128)
+        biz_id = biz_id if biz_id else f"{random.randint(0,10**128)}"
         amount = float(input("Enter amount: "))
 
         self.print_response("Transfer Result",
