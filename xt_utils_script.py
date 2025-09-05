@@ -1220,11 +1220,12 @@ xt:
         currency = input("Enter currency (lowercase, e.g., usdt, btc): ")
         symbol = input("Enter symbol: ")
         biz_id = input("Enter bizId (leave empty for auto-generated): ")
-        biz_id = biz_id if biz_id else f"{random.randint(0,10**128)}"
+        biz_id = biz_id if biz_id else f"{random.randint(0,10**50)}"
         amount = float(input("Enter amount: "))
 
         self.print_response("Transfer Result",
                           self.acct.transfer(from_account, to_account, currency, amount, symbol,biz_id))
+        print(f"If TRANSFER_001, try again but with different bizId or let it auto generate.")
 
     def handle_get_spot_hist_orders(self):
         """Handle get spot historical orders request"""
