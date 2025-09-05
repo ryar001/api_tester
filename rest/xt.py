@@ -1,6 +1,7 @@
 from pyxt.spot import Spot
 from pyxt.perp import Perp
 from pathlib import Path
+import random
 import sys
 from api_tester.rest.baseclass import RestBaseClass
 import yaml
@@ -768,7 +769,7 @@ class XtApi(RestBaseClass):
         @return:
         """
         params = {
-            "bizId": biz_id if biz_id else "1",
+            "bizId": biz_id if biz_id else f"{random.randint(0,128)}",
             "from": from_account,
             "to": to_account,
             "currency": currency,

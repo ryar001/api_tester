@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
+import random
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent))
 from rest.xt import XtApi
@@ -410,7 +411,7 @@ class XtUtils:
         """
         return self.client.cancel_fut_open_orders(symbol=symbol)
 
-    def transfer(self, from_account, to_account, currency, amount, symbol):
+    def transfer(self, from_account, to_account, currency, amount, symbol,biz_id):
         """
         Transfer assets between accounts
 
@@ -431,8 +432,8 @@ class XtUtils:
         Returns:
             dict: Transfer response
         """
-        print(f"Transferring {amount} {currency} from {from_account} to {to_account}")
-        return self.client.transfer(from_account, to_account, currency, amount, symbol)
+        print(f"Transferring {amount} {currency} from {from_account} to {to_account}, biz_id: {biz_id}")
+        return self.client.transfer(from_account, to_account, currency, amount, symbol,biz_id)
 
     def handle_get_spot_trades(self):
         """Handle get spot trades request"""
@@ -1218,10 +1219,12 @@ xt:
         to_account = input("Enter destination account type: ")
         currency = input("Enter currency (lowercase, e.g., usdt, btc): ")
         symbol = input("Enter symbol: ")
+        biz_id = input("Enter bizId (leave empty for auto-generated): ")
+        biz_id = biz_id if biz_id else random.randint(0,128)
         amount = float(input("Enter amount: "))
 
         self.print_response("Transfer Result",
-                          self.acct.transfer(from_account, to_account, currency, amount, symbol))
+                          self.acct.transfer(from_account, to_account, currency, amount, symbol,biz_id))
 
     def handle_get_spot_hist_orders(self):
         """Handle get spot historical orders request"""
