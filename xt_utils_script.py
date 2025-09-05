@@ -1207,11 +1207,11 @@ xt:
     def handle_transfer(self):
         """Handle transfer between accounts request"""
         print("\nAvailable account types:")
-        print("  SPOT : Spot")
-        print("  LEVER : Margin")
-        print("  FINANCE : Finance")
-        print("  FUTURES_U : USDT-M Futures")
-        print("  FUTURES_C : Coin-M Futures")
+        print("  SPOT : Spot account")
+        print("  LEVER : Margin account")
+        print("  FINANCE : Finance account")
+        print("  FUTURES_U : USDT-M futures account")
+        print("  FUTURES_C : Coin-M futures account")
         print()
 
         from_account = input("Enter source account type: ")

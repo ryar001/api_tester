@@ -776,7 +776,7 @@ class XtApi(RestBaseClass):
             "symbol": symbol,
         }
         res = self.spot.req_post("/v4/balance/transfer", params, auth=True)
-        return res['result']
+        return res
 
     def get_spot_trades(self, symbol=None, biz_type="SPOT",limit=100, start_time=None, end_time=None):
         """
