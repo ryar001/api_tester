@@ -1,6 +1,7 @@
 import sys
 import yaml
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -1220,7 +1221,7 @@ xt:
         currency = input("Enter currency (lowercase, e.g., usdt, btc): ")
         symbol = input("Enter symbol: ")
         biz_id = input("Enter bizId (leave empty for auto-generated): ")
-        biz_id = biz_id if biz_id else f"{random.randint(0,10**50)}"
+        biz_id = biz_id if biz_id else f"{int(time.time()*1000)}"
         amount = float(input("Enter amount: "))
 
         self.print_response("Transfer Result",

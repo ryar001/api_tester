@@ -769,7 +769,7 @@ class XtApi(RestBaseClass):
         @return:
         """
         params = {
-            "bizId": biz_id if biz_id else f"{random.randint(0,128)}",
+            "bizId": biz_id if biz_id else f"{int(time.time()*100000)}",
             "from": from_account,
             "to": to_account,
             "currency": currency,
